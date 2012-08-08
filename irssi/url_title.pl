@@ -16,7 +16,7 @@ $VERSION='0.1';
     name => 'url_title.pl',
     description => 'Print url title on active window when someone paste a link',
     licence => 'BSD',
-    url => 'https://github.com/sbz/misc/irssi/url_title.pl'
+    url => 'https://raw.github.com/sbz/misc/master/irssi/url_title.pl'
 );
 
 
