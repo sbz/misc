@@ -32,7 +32,7 @@ sub title($) {
 
 sub event_message_public ($$$$) {
     my ($server, $text, $nick, $address, $target) = @_;
-    Irssi::active_win->print(title($text)." on $target by $nick ($address)") if $text =~m#^http://.*#og;
+    Irssi::active_win->print(title($text)." on $target by $nick ($address)") if $text =~m#^http(s?)://.*#og;
 }
 
 Irssi::signal_add('message public', "event_message_public");
