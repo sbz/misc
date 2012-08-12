@@ -26,6 +26,7 @@ def fetchpatch(pr_number, category='ports'):
 def writepatch(filename, data):
     f=open(filename, 'w')
     f.write(data)
+    f.close()
     print("[+] %s created" % filename)
 
 def getpatch(pr):
