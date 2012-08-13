@@ -41,6 +41,7 @@ class GetPatch(object):
 
     def __init__(self, pr):
         self.pr = pr
+        self.patchs = list()
         self.url = str()
         self.patch = str()
 
@@ -56,21 +57,22 @@ class GetPatch(object):
     def get(self):
         self.fetch(self.pr, category='ports', action='edit')
 
-        # alias self.patch
-        patch = self.patch
-        if '.' not in patch:
-            print("[-] No patch found")
-            sys.exit(1)
+        for patch in self.patchs:
+            url = patch['url']
+            p = patch['name']
+            if '.' not in p:
+                print("[-] No patch found")
+                sys.exit(1)
 
-        self.write(
-            patch[:patch.rindex('.')]+'.diff', urllib2.urlopen(self.url).read()
-        )
+            self.write(
+                p[:p.rindex('.')]+'.diff', urllib2.urlopen(url).read()
+            )
 
 class GnatsGetPatch(GetPatch):
 
     URL_BASE='http://www.freebsd.org/cgi'
     URL='%s/query-pr.cgi?pr=' % URL_BASE
-    REGEX=r'.*<b>Download <a href="([^"]*)">([^<]*)</a>.*'
+    REGEX=r'<b>Download <a href="([^"]*)">([^<]*)</a>'
 
     def __init__(self, pr):
         GetPatch.__init__(self, pr)
@@ -85,10 +87,8 @@ class GnatsGetPatch(GetPatch):
             print("[-] No patch found")
             sys.exit(1)
 
-        for line in data.split('\n'):
-            if 'Download' in line:
-                self.url, self.patch = re.match(pattern, line).groups()
-                break
+        for patchs in re.findall(pattern, data):
+            self.patchs.append({'url': patchs[0], 'name': patchs[1]})
 
 class BzGetPatch(GetPatch):
 
