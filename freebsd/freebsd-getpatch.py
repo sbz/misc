@@ -54,8 +54,11 @@ class GetPatch(object):
         f.close()
         print("[+] %s created" % filename)
 
-    def get(self):
+    def get(self,only_last=False):
         self.fetch(self.pr, category='ports', action='edit')
+
+        if only_last:
+            self.patchs = [self.patchs.pop()]
 
         for patch in self.patchs:
             url = patch['url']
@@ -118,7 +121,8 @@ def main(pr):
 
     parser = argparse.ArgumentParser(description='Gets patch from Bug Tracking System')
     parser.add_argument('pr', metavar='pr', type=str, nargs=1, help='Pr id number')
-    parser.add_argument('--mode', type=str, help='Available modes to retrieve patch [gnats|bz]', default='gnats')
+    parser.add_argument('--mode', type=str, help='Available modes to retrieve patch', choices=['gnats','bz'], default='gnats')
+    parser.add_argument('--last', action='store_true', help='Only retrieve last iteration of the patch')
 
     args = parser.parse_args()
 
@@ -130,7 +134,7 @@ def main(pr):
 
     Clazz = globals()['%sGetPatch' % args.mode.capitalize()]
     gp = Clazz(pr)
-    gp.get()
+    gp.get(only_last=args.last)
 
 if __name__ == '__main__':
 
