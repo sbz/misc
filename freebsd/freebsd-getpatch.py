@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012 Sofian Brabez <sbz@FreeBSD.org>
 # All rights reserved.
@@ -44,6 +44,7 @@ class GetPatch(object):
         self.patchs = list()
         self.url = str()
         self.patch = str()
+        self.output_stdout = False
 
     def fetch(self, *largs, **kwargs):
         raise NotImplementedError()
@@ -52,9 +53,10 @@ class GetPatch(object):
         f=open(filename, 'w')
         f.write(data)
         f.close()
-        print("[+] %s created" % filename)
+        self.out("[+] %s created" % filename)
 
-    def get(self,only_last=False):
+    def get(self,only_last=False, output_stdout=False):
+        self.output_stdout = output_stdout
         self.fetch(self.pr, category='ports', action='edit')
 
         if only_last:
@@ -64,12 +66,19 @@ class GetPatch(object):
             url = patch['url']
             p = patch['name']
             if '.' not in p:
-                print("[-] No patch found")
+                self.out("[-] No patch found")
                 sys.exit(1)
 
-            self.write(
-                p[:p.rindex('.')]+'.diff', urllib2.urlopen(url).read()
-            )
+            data = urllib2.urlopen(url).read()
+
+            if self.output_stdout:
+                sys.stdout.write(data)
+            else:
+                self.write(p[:p.rindex('.')]+'.diff', data)
+
+    def out(self, s):
+        if not self.output_stdout:
+            print(s)
 
 class GnatsGetPatch(GetPatch):
 
@@ -82,12 +91,12 @@ class GnatsGetPatch(GetPatch):
 
     def fetch(self, *largs, **kwargs):
         category = kwargs['category']
-        print("[+] Fetching patch for pr %s/%s" % (category, self.pr))
+        self.out("[+] Fetching patch for pr %s/%s" % (category, self.pr))
         pattern = re.compile(self.REGEX)
         u = urllib2.urlopen(self.URL+'%s/%s' % (category, self.pr))
         data = u.read()
         if data == None:
-            print("[-] No patch found")
+            self.out("[-] No patch found")
             sys.exit(1)
 
         for patchs in re.findall(pattern, data):
@@ -97,25 +106,30 @@ class BzGetPatch(GetPatch):
 
     URL_BASE='https://bugzilla.freebsd.org'
     URL='%s/attachment.cgi?id=' % URL_BASE
-    REGEX=r'.*<div class="details">([^ ]+) \(text/plain\)'
+    REGEX=r'<div class="details">([^ ]+) \(text/plain\)'
+
+    def __init__(self, pr):
+        GetPatch.__init__(self, pr)
 
     def fetch(self, *largs, **kwargs):
         category = kwargs['category']
         action = 'action=%s' % kwargs['action']
-        print("[+] Fetching patch for pr %s/%s" % (category, self.pr))
+        self.out("[+] Fetching patch for pr %s/%s" % (category, self.pr))
         pattern = re.compile(self.REGEX)
         u = urllib2.urlopen(self.URL+'%s&%s' % (self.pr, action))
         data = u.read()
         if data == None:
-            print("[-] No patch found")
+            self.out("[-] No patch found")
             sys.exit(1)
 
-        for line in data.split('\n'):
-            if 'details' in line:
-                self.patch = re.match(pattern, line).groups()[0]
-                break
+        url = self.URL+'%s' % self.pr
+        name = re.findall(pattern, data)[0]
 
-        self.url = self.URL+'%s' % self.pr
+        if name == None:
+            self.out("[-] No patch found")
+            sys.exit(1)
+
+        self.patchs.append({'url': url, 'name': name})
 
 def main(pr):
 
@@ -123,6 +137,7 @@ def main(pr):
     parser.add_argument('pr', metavar='pr', type=str, nargs=1, help='Pr id number')
     parser.add_argument('--mode', type=str, help='Available modes to retrieve patch', choices=['gnats','bz'], default='gnats')
     parser.add_argument('--last', action='store_true', help='Only retrieve last iteration of the patch')
+    parser.add_argument('--stdout', action='store_true', help='Output patch on stdout')
 
     args = parser.parse_args()
 
@@ -134,8 +149,11 @@ def main(pr):
 
     Clazz = globals()['%sGetPatch' % args.mode.capitalize()]
     gp = Clazz(pr)
-    gp.get(only_last=args.last)
+    gp.get(only_last=args.last, output_stdout=args.stdout)
 
 if __name__ == '__main__':
+
+    if len(sys.argv) == 1:
+        sys.exit(1)
 
     main(sys.argv[1])
