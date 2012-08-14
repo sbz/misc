@@ -131,13 +131,17 @@ class BzGetPatch(GetPatch):
 
         self.patchs.append({'url': url, 'name': name})
 
-def main(pr):
+def main():
 
     parser = argparse.ArgumentParser(description='Gets patch from Bug Tracking System')
     parser.add_argument('pr', metavar='pr', type=str, nargs=1, help='Pr id number')
     parser.add_argument('--mode', type=str, help='Available modes to retrieve patch', choices=['gnats','bz'], default='gnats')
     parser.add_argument('--last', action='store_true', help='Only retrieve last iteration of the patch')
     parser.add_argument('--stdout', action='store_true', help='Output patch on stdout')
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
 
     args = parser.parse_args()
 
@@ -153,7 +157,4 @@ def main(pr):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) == 1:
-        sys.exit(1)
-
-    main(sys.argv[1])
+    main()
