@@ -39,8 +39,9 @@ FreeBSD getpatch handles Gnats and Bugzilla patch attachment
 
 class GetPatch(object):
 
-    def __init__(self, pr):
+    def __init__(self, pr, category='ports'):
         self.pr = pr
+        self.category = category
         self.patchs = list()
         self.url = str()
         self.patch = str()
@@ -57,7 +58,7 @@ class GetPatch(object):
 
     def get(self,only_last=False, output_stdout=False):
         self.output_stdout = output_stdout
-        self.fetch(self.pr, category='ports', action='edit')
+        self.fetch(self.pr, category=self.category, action='edit')
 
         if only_last:
             self.patchs = [self.patchs.pop()]
@@ -86,8 +87,8 @@ class GnatsGetPatch(GetPatch):
     URL='%s/query-pr.cgi?pr=' % URL_BASE
     REGEX=r'<b>Download <a href="([^"]*)">([^<]*)</a>'
 
-    def __init__(self, pr):
-        GetPatch.__init__(self, pr)
+    def __init__(self, pr, category):
+        GetPatch.__init__(self, pr, category)
 
     def fetch(self, *largs, **kwargs):
         category = kwargs['category']
@@ -108,8 +109,8 @@ class BzGetPatch(GetPatch):
     URL='%s/attachment.cgi?id=' % URL_BASE
     REGEX=r'<div class="details">([^ ]+) \(text/plain\)'
 
-    def __init__(self, pr):
-        GetPatch.__init__(self, pr)
+    def __init__(self, pr, category):
+        GetPatch.__init__(self, pr, category)
 
     def fetch(self, *largs, **kwargs):
         category = kwargs['category']
@@ -145,14 +146,16 @@ def main():
 
     args = parser.parse_args()
 
+    category = 'ports'
     pr = str(args.pr[0])
     mode = args.mode
 
     if '/' in pr and pr is not None:
+        category = pr.split('/')[0]
         pr = pr.split('/')[1]
 
     Clazz = globals()['%sGetPatch' % args.mode.capitalize()]
-    gp = Clazz(pr)
+    gp = Clazz(pr, category)
     gp.get(only_last=args.last, output_stdout=args.stdout)
 
 if __name__ == '__main__':
