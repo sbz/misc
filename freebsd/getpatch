@@ -105,8 +105,7 @@ class GnatsGetPatch(GetPatch):
 
 class BzGetPatch(GetPatch):
 
-    #URL_BASE='https://bugzilla.freebsd.org'
-    URL_BASE = 'https://bugzilla.mindrot.org'
+    URL_BASE='https://bugzilla.freebsd.org'
     URL_SHOW = '%s/show_bug.cgi?id=' % URL_BASE
     REGEX_URL = r'<a href="([^<]+)">Details</a>'
     REGEX = r'<div class="details">([^ ]+) \(text/plain\)'
