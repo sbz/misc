@@ -34,7 +34,7 @@ import sys
 import urllib2
 
 """
-FreeBSD getpatch handles Gnats and Bugzilla patch attachment
+FreeBSD getpatch handles Gnats and Bugzilla patch attachments
 """
 
 class GetPatch(object):
@@ -58,7 +58,7 @@ class GetPatch(object):
 
     def get(self,only_last=False, output_stdout=False):
         self.output_stdout = output_stdout
-        self.fetch(self.pr, category=self.category, action='edit')
+        self.fetch(self.pr, category=self.category)
 
         if only_last:
             self.patchs = [self.patchs.pop()]
@@ -83,9 +83,9 @@ class GetPatch(object):
 
 class GnatsGetPatch(GetPatch):
 
-    URL_BASE='http://www.freebsd.org/cgi'
-    URL='%s/query-pr.cgi?pr=' % URL_BASE
-    REGEX=r'<b>Download <a href="([^"]*)">([^<]*)</a>'
+    URL_BASE = 'http://www.freebsd.org/cgi'
+    URL = '%s/query-pr.cgi?pr=' % URL_BASE
+    REGEX = r'<b>Download <a href="([^"]*)">([^<]*)</a>'
 
     def __init__(self, pr, category):
         GetPatch.__init__(self, pr, category)
@@ -105,40 +105,66 @@ class GnatsGetPatch(GetPatch):
 
 class BzGetPatch(GetPatch):
 
-    URL_BASE='https://bugzilla.freebsd.org'
-    URL='%s/attachment.cgi?id=' % URL_BASE
-    REGEX=r'<div class="details">([^ ]+) \(text/plain\)'
+    #URL_BASE='https://bugzilla.freebsd.org'
+    URL_BASE = 'https://bugzilla.mindrot.org'
+    URL_SHOW = '%s/show_bug.cgi?id=' % URL_BASE
+    REGEX_URL = r'<a href="([^<]+)">Details</a>'
+    REGEX = r'<div class="details">([^ ]+) \(text/plain\)'
 
     def __init__(self, pr, category):
         GetPatch.__init__(self, pr, category)
 
+    def _extract_patchs_url(self, data):
+        pattern = re.compile(self.REGEX_URL)
+        return re.findall(pattern, data)
+
+    def _extract_patchs_name(self, urls):
+        names = []
+        pattern = re.compile(self.REGEX)
+        for url in urls:
+            u = urllib2.urlopen('%s/%s' % (self.URL_BASE, url))
+            data = u.read()
+            names.append(re.findall(pattern, data)[0])
+
+        return names
+
     def fetch(self, *largs, **kwargs):
         category = kwargs['category']
-        action = 'action=%s' % kwargs['action']
         self.out("[+] Fetching patch for pr %s/%s" % (category, self.pr))
-        pattern = re.compile(self.REGEX)
-        u = urllib2.urlopen(self.URL+'%s&%s' % (self.pr, action))
+        u = urllib2.urlopen(self.URL_SHOW+'%s' % self.pr)
         data = u.read()
+
         if data == None:
             self.out("[-] No patch found")
             sys.exit(1)
 
-        url = self.URL+'%s' % self.pr
-        name = re.findall(pattern, data)[0]
+        urls = self._extract_patchs_url(data)
+        nb_urls = len(urls)
+        names = self._extract_patchs_name(urls)
+        nb_names = len(names)
 
-        if name == None:
+        urls = ['%s/%s' % (self.URL_BASE, u[:u.find('&')]) for u in urls]
+
+        if nb_names == 0 or nb_urls == 0 or nb_names != nb_urls:
             self.out("[-] No patch found")
             sys.exit(1)
 
-        self.patchs.append({'url': url, 'name': name})
+        for i in xrange(nb_urls):
+            self.patchs.append({'url': urls[i], 'name': names[i]})
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Gets patch from Bug Tracking System')
-    parser.add_argument('pr', metavar='pr', type=str, nargs=1, help='Pr id number')
-    parser.add_argument('--mode', type=str, help='Available modes to retrieve patch', choices=['gnats','bz'], default='gnats')
-    parser.add_argument('--last', action='store_true', help='Only retrieve last iteration of the patch')
-    parser.add_argument('--stdout', action='store_true', help='Output patch on stdout')
+    parser = argparse.ArgumentParser(
+            description='Gets patch attachments from Bug Tracking System'
+    )
+    parser.add_argument('pr', metavar='pr', type=str, nargs=1,
+            help='Pr id number')
+    parser.add_argument('--mode', type=str, choices=['gnats','bz'],
+            default='gnats', help='available modes to retrieve patch')
+    parser.add_argument('--last', action='store_true',
+            help='only retrieve last iteration of the patch')
+    parser.add_argument('--stdout', action='store_true',
+            help='output patch on stdout')
 
     if len(sys.argv) == 1:
         parser.print_help()
@@ -148,7 +174,6 @@ def main():
 
     category = 'ports'
     pr = str(args.pr[0])
-    mode = args.mode
 
     if '/' in pr and pr is not None:
         category = pr.split('/')[0]
