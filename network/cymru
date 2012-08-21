@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ "x$1" = "x" ]; then
+        (echo "begin";echo "verbose";cat;echo "end") | nc whois.cymru.com 43
+else
+        whois -h whois.cymru.com " -v $1"
+fi
