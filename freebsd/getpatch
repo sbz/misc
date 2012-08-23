@@ -68,9 +68,6 @@ class GetPatch(object):
         for patch in self.patchs:
             url = patch['url']
             p = patch['name']
-            if '.' not in p:
-                self.out("[-] No patch found")
-                sys.exit(1)
 
             data = urllib2.urlopen(url).read()
 
