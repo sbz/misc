@@ -94,9 +94,10 @@ class GnatsGetPatch(GetPatch):
 
     def fetch(self, *largs, **kwargs):
         category = kwargs['category']
-        self.out("[+] Fetching patch for pr %s/%s" % (category, self.pr))
+        target = ("%s/%s" % (category, self.pr), "%s" % self.pr)[category=='']
+        self.out("[+] Fetching patch for pr %s" % target)
         pattern = re.compile(self.REGEX)
-        u = urllib2.urlopen(self.URL+'%s/%s' % (category, self.pr))
+        u = urllib2.urlopen(self.URL+'%s' % target)
         data = u.read()
         if data == None:
             self.out("[-] No patch found")
@@ -173,7 +174,7 @@ def main():
 
     args = parser.parse_args()
 
-    category = 'ports'
+    category = str()
     pr = str(args.pr[0])
 
     if '/' in pr and pr is not None:
