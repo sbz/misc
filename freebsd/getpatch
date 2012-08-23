@@ -62,6 +62,10 @@ class GetPatch(object):
         self.output_stdout = output_stdout
         self.fetch(self.pr, category=self.category)
 
+        if len(self.patchs) == 0:
+            self.out("[-] No patch found")
+            sys.exit(1)
+
         if only_last:
             self.patchs = [self.patchs.pop()]
 
