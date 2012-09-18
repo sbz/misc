@@ -1,9 +1,11 @@
 #!/bin/sh
 
-PORTSDIR="/usr/ports"
-MAINTAINER="${1:-${USER}}@FreeBSD.org"
-PORTLINT_FLAGS="-Abct"
+: ${PORTSDIR:="/usr/ports"}
+: ${MAINTAINER:="${1:-${USER}}@FreeBSD.org"}
+
+PORTLINT_FLAGS="-Abct${PORTLINT_FLAGS}"
 SCRIPT=$0
+SCRIPT=${SCRIPT##*/}
 
 ports_by_maintainer() {
 	ports=`make -C ${PORTSDIR} search key=${MAINTAINER} display="path"|sed -n "s#Path:.*${PORTSDIR}\(.*\)#\1#p"`
@@ -20,9 +22,9 @@ main() {
 
 	for port in $ports
 	do
-		cd ${PORTSDIR}/$port
-		echo -e "===> portlint output on port $port ==\n" >> /tmp/${SCRIPT}.log
-		$(which portlint) ${PORTLINT_FLAGS} >> /tmp/${SCRIPT}.log
+		cd "${PORTSDIR}/$port"
+		echo "===> portlint output on port $port ==" >> /tmp/${SCRIPT}.log
+		portlint ${PORTLINT_FLAGS} >> /tmp/${SCRIPT}.log
 		echo -e "<=== portlint output ==\n" >> /tmp/${SCRIPT}.log
 		cd -
 	done
