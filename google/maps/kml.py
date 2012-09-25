@@ -17,7 +17,10 @@ class KMLWriter(object):
     def process(self):
         inputs = file(self.input, 'r')
         for ip in inputs.readlines():
-            self.process_kml(self.process_geoip_recorid(ip.strip()))
+            try:
+                self.process_kml(self.process_geoip_record(ip.strip()))
+            except:
+                pass
 
         inputs.close()
 
@@ -25,7 +28,7 @@ class KMLWriter(object):
         f.write(le.tostring(self.xml, pretty_print=True))
         f.close()
 
-    def process_geoip_recorid(self, ip_address):
+    def process_geoip_record(self, ip_address):
         gi = GeoIP.open('GeoLiteCity.dat', GeoIP.GEOIP_STANDARD)
         gr = gi.record_by_addr(ip_address)
         gr['ip'] = ip_address
@@ -64,4 +67,4 @@ class KMLWriter(object):
 
 if __name__ == '__main__':
    kw = KMLWriter(sys.argv[1], sys.argv[2])
-   kw.process() 
+   kw.process()
