@@ -1,7 +1,20 @@
 #!/bin/sh
 
+getip_byclass(){
+	local type=$1
+	local fqdn=$2
+
+	LANG=C host -4 -t $type $fqdn|sed -n 's#.* address \(.*\)#\1#p'
+
+}
+
 if [ "x$1" = "x" ]; then
         (echo "begin";echo "verbose";cat;echo "end") | nc whois.cymru.com 43
 else
-        whois -h whois.cymru.com " -v $1"
+	ipv4_address=$(getip_byclass 'A' "$1")
+	ipv6_address=$(getip_byclass 'AAAA' "$1")
+
+        whois -h whois.cymru.com " -v $ipv4_address"
+
+	[ ! -z $ipv6_address ] && whois -h whois.cymru.com " -v $ipv6_address"
 fi
