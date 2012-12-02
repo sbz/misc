@@ -1,0 +1,6 @@
+#!/bin/sh
+
+PORTSDIR="/usr/ports"
+
+cd ${PORTSDIR}
+vim -p $(cd ${PORTSDIR}; psearch -m ${USER}|cut -d' ' -f1|xargs -I {} echo {}/Makefile)
