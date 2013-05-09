@@ -30,7 +30,6 @@
 
 import argparse
 import codecs
-import locale
 import re
 import sys
 if sys.version_info.major == 3:
@@ -51,7 +50,7 @@ class GetPatch(object):
         self.url = ""
         self.patch = ""
         self.output_stdout = False
-        self.default_locale = locale.getdefaultlocale()[1].lower()
+        self.default_locale = sys.getdefaultencoding()
 
     def fetch(self, *largs, **kwargs):
         raise NotImplementedError()
