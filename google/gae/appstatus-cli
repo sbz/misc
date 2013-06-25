@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+
+"""
+appstatus-cli show Google AppEngine status in your shell.
+"""
+
+"""
+Usage:
+
+Use Linux watch(1) command or sysutils/cmdwatch on BSD to monitor status
+periodically using flag -n or just run it:
+
+    % watch -n $((15*60)) -d ./appstatus-cli # every 15 mins and show differences
+    % ./appstatus-cli
+"""
+
+__author__ = 'Sofian Brabez <sbz@6dev.net>'
+
+import argparse
+import lxml.html as lh
+import sys
+import time
+
+class GAEStatus(object):
+    GAE_STATUS_URL='http://code.google.com/status/appengine/'
+
+    def __init__(self):
+        self.root = lh.parse(self.GAE_STATUS_URL)
+        self._engines = []
+        self._states_daily = []
+        self._status_now = []
+        self._dates = []
+        self._sections = []
+
+        self.fetch_status()
+        self.fetch_availability()
+
+    def fetch_availability(self):
+        self._availability = self.root.xpath("//div[@id='ae-trust-status-summary']//dl[@id='ae-trust-availability']//dd/text()")[0].strip()
+
+    def fetch_status(self):
+        h3 = self.root.xpath("//table[@id='ae-trust-status-table']//th[@scope='row']//h3")
+        serving = [v.text.strip() for v in h3[0:3]]
+        apis = [v.text.strip() for v in h3[3:]]
+        self._engines = serving + apis
+
+        status_daily = self.root.xpath("//table[@id='ae-trust-status-table']//tr//td//a[@title]")
+        self._states_daily = [v.values()[1].strip() for v in status_daily]
+
+        self._status_now = [v.strip() for v in
+            self.root.xpath("//table[@id='ae-trust-status-table']//td[@class='ae-trust-col-now-prod']//a[@id]//text()")]
+
+        self._dates = [v.strip() for v in
+            self.root.xpath("//table[@id='ae-trust-status-table']//th[@scope='col']//text()")]
+
+        self._section = self.root.xpath("//table[@id='ae-trust-status-table']//tr[@class='ae-trust-status-section']//td//text()")
+
+    def display_status(self):
+        self.display_line_date()
+        self.display_line_status()
+        self.display_availability()
+
+    def display_line_date(self):
+        print "Dates" + "%8s |" % "" + " | ".join(["%10s" % d for d in self._dates[:-1]]) + " | " + "%8s" % self._dates[-1] + " |"
+        print self._section[0].strip()
+
+    def display_line_status(self):
+        for i in range (0, 11):
+            if i == 3:
+                print self._section[1].strip()
+            print "%13s |" % (self._engines[i]) + " | ".join(["%10s" % s for s  in self._states_daily[i:8+i]]) + " | " + "%8s" % self._status_now[i] + " |"
+
+    def display_availability(self):
+        print "Current Availability on %s" % time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+        print "%13s" % self._availability
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Show Google AppEngine status in your command line"
+    )
+
+    args = parser.parse_args()
+    appstatus = GAEStatus()
+    appstatus.display_status()
+
+if __name__ == '__main__':
+    main()
