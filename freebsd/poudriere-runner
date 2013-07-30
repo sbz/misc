@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+
+"""
+sbz poudriere runner
+"""
+
+import argparse
+import configparser
+import os
+import shlex
+import subprocess
+import sys
+
+LOCALBASE="/usr/local"
+
+default_conf="""
+[default]
+disk_path=%s/zfsfs
+jails=83i386,83amd64,91i386,91amd64,10amd64
+disable_jails=10amd64
+debug=False
+
+[83i386]
+name=83i386
+arch=i386
+version=8.3-RELEASE
+
+[83amd64]
+name=83amd64
+arch=amd64
+version=8.3-RELEASE
+
+[91i386]
+name=91i386
+arch=i386
+version=9.1-RELEASE
+
+[91amd64]
+name=91amd64
+arch=amd64
+version=9.1-RELEASE
+""" % LOCALBASE
+
+class Prunner(object):
+    def __init__(self):
+        load_disk()
+        self._jails = load_jails()
+        self._port_trees = []
+        self.is_setup = True
+        if not self.is_setup:
+            self.setup()
+
+    def setup(self, **params):
+        if debug:
+            print("setup...")
+        #TODO: test if exists to avoid recreating jails
+        params['host'] = 'FREEBSD_HOST=ftp.fr.freebsd.org'
+        for jail in self._jails:
+            cmd = "poudriere jail -c -j {0} -a {1} -v {2} {3}".format(
+                jail['name'],
+                jail['arch'],
+                jail['version'],
+                params['host'])
+            if debug:
+                print("exec: {0}".format(cmd))
+            sudo(cmd)
+
+    def teardown(self):
+        #TODO: kill jail (stop them)
+        for jail in self._jails:
+            cmd = "poudriere jail -k -j {0}".format(jail['name'])
+            if debug:
+                print("exec: {0}".format(cmd))
+            sudo(cmd)
+
+    @property
+    def jails(self):
+       return self._jails
+
+    @property
+    def port_trees(self):
+       return self._port_trees
+
+    def test_port(self, origin, port_tree="ptree"):
+        for jail in self._jails:
+            if debug:
+                print("testport o: {0}: j: {1}".format(origin, jail['name']))
+            cmd = "poudriere testport -o {0} -j {1} -p {2} -n".format(
+                    origin,
+                    jail['name'], port_tree)
+            out, err = sudo(cmd)
+            if debug:
+                print("j: {0}, out: {1}, err: {2}".format(jail['name'], out,
+                    err))
+
+    def test_all(self):
+        for o in self.sbzports():
+            self.test_port(o)
+
+    def bulk(self, jail):
+        raise NotImplemented("not available yet")
+
+    def sbzports(self):
+        #TODO: don't rely on sbzports file
+        ports = open('{0}/sbzports'.format(os.path.expanduser('~%s' %
+            os.environ['USER'])), 'r').read().strip().split('\n')
+        return ports
+
+    def __del__(self):
+        if debug:
+            print("teardown()...")
+        if not self.is_setup:
+            self.teardown()
+
+def run(command, use_sudo=False):
+    command = "sudo %s" % command if use_sudo else command
+    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    p.wait()
+    return stdout.strip(), stderr
+
+def sudo(command):
+    return run(command, use_sudo=True)
+
+def load_disk():
+    disk_path = cfg.get('default', 'disk_path')
+    if not os.path.exists('/dev/md0'):
+        out, err = sudo("mdconfig -t vnode -a -f {0}".format(disk_path))
+        if err is not None:
+            print("Error: {0}".format(out))
+            sys.exit(1)
+    return True
+
+def load_jails():
+    jails = []
+    existing_jails = cfg.get('default', 'jails').split(',')
+    existing_jails.remove(cfg.get('default', 'disable_jails'))
+
+    for jail in existing_jails:
+        name = cfg.get(jail, 'name')
+        arch = cfg.get(jail, 'arch')
+        version = cfg.get(jail, 'version')
+        jails.append({'name': name, 'arch': arch, 'version': version})
+
+    return jails
+
+def main():
+    global cfg, debug
+    cfg = configparser.ConfigParser()
+    cfg.read_string(default_conf)
+    debug = cfg.get('default', 'debug')
+    if debug:
+        print(cfg.get('default', 'disk_path'))
+
+    runner = Prunner()
+    origin = sys.argv[1]
+    runner.test_port(origin)
+    #runner.test_all()
+
+if __name__ == '__main__':
+    main()
