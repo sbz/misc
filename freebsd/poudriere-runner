@@ -153,7 +153,13 @@ def main():
         print(cfg.get('default', 'disk_path'))
 
     runner = Prunner()
-    origin = sys.argv[1]
+    print(len(sys.argv))
+    if len(sys.argv) == 1:
+        cwd = os.getcwd()
+        origin = "{0}/{1}".format(cwd.split('/')[-1], cwd.split('/')[-2])
+    else:
+        origin = sys.argv[1]
+
     runner.test_port(origin)
     #runner.test_all()
 
