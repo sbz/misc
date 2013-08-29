@@ -15,10 +15,11 @@ LOCALBASE="/usr/local"
 
 default_conf="""
 [default]
+debug=False
 disk_path=%s/zfsfs
 jails=83i386,83amd64,91i386,91amd64,10amd64
-disable_jails=10amd64
-debug=False
+jails_disabled=10amd64
+mdconfig_cmd=mdconfig -f
 
 [83i386]
 name=83i386
@@ -123,9 +124,10 @@ def sudo(command):
     return run(command, use_sudo=True)
 
 def loadDisk():
+    mdconfig_cmd = cfg.get('default', 'mdconfig_cmd')
     disk_path = cfg.get('default', 'disk_path')
     if not os.path.exists('/dev/md0'):
-        out, err = sudo("mdconfig -t vnode -a -f {0}".format(disk_path))
+        out, err = sudo("{0} {1}".format(mdconfig_cmd, disk_path))
         if err is not None:
             print("Error: {0}".format(out))
             sys.exit(1)
@@ -134,7 +136,7 @@ def loadDisk():
 def loadJails():
     jails = []
     existing_jails = cfg.get('default', 'jails').split(',')
-    existing_jails.remove(cfg.get('default', 'disable_jails'))
+    existing_jails.remove(cfg.get('default', 'jails_disabled'))
 
     for jail in existing_jails:
         name = cfg.get(jail, 'name')
