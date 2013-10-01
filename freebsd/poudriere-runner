@@ -20,6 +20,8 @@ disk_path=%s/zfsfs
 jails=83i386,83amd64,91i386,91amd64,10amd64
 jails_disabled=10amd64
 mdconfig_cmd=mdconfig -f
+cpuset=True
+cpuset_cmd=cpuset -c -l 0
 
 [83i386]
 name=83i386
@@ -114,6 +116,11 @@ class Prunner(object):
             self.teardown()
 
 def run(command, use_sudo=False):
+    cpuset_cmd = cfg.get('default', 'cpuset_cmd')
+    use_cpuset = cfg.get('default', 'cpuset')
+    if use_cpuset:
+        command = "%s %s" % (cpuset_cmd, command)
+
     command = "sudo %s" % command if use_sudo else command
     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
     stdout, stderr = p.communicate()
@@ -161,7 +168,8 @@ def main():
     else:
         origin = sys.argv[1]
 
-    runner.testPort(origin)
+    if os.path.isdir(origin):
+        runner.testPort(origin)
     #runner.testAll()
 
 if __name__ == '__main__':
