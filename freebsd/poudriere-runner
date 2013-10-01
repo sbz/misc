@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 LOCALBASE="/usr/local"
+PORTSDIR="/usr/ports" or os.environ['PORTSDIR']
 
 default_conf="""
 [default]
@@ -153,6 +154,10 @@ def loadJails():
 
     return jails
 
+def isValidOrigin(origin):
+    abspath = "{0}/{1}".format(PORTSDIR, origin)
+    return os.path.isdir(abspath)
+
 def main():
     global cfg, debug
     cfg = configparser.ConfigParser()
@@ -168,7 +173,7 @@ def main():
     else:
         origin = sys.argv[1]
 
-    if os.path.isdir(origin):
+    if isValidOrigin(origin):
         runner.testPort(origin)
     #runner.testAll()
 
