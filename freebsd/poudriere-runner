@@ -18,34 +18,39 @@ default_conf="""
 [default]
 debug=False
 disk_path=%s/zfsfs
-jails=10amd64,83amd64,83i386,91amd64,91i386
-jails_disabled=83amd64,83i386,91amd64,91i386
+jails=10i386,10amd64,84amd64,84i386,92amd64,92i386
+jails_disabled=84amd64,84i386,92amd64,92i386
 mdconfig_cmd=mdconfig -f
 cpuset=True
 cpuset_cmd=cpuset -c -l 0-3
 
-[83i386]
-name=83i386
+[84i386]
+name=84i386
 arch=i386
-version=8.3-RELEASE
+version=8.4-RELEASE
 
-[83amd64]
+[84amd64]
 name=83amd64
 arch=amd64
-version=8.3-RELEASE
+version=8.4-RELEASE
 
-[91i386]
+[92i386]
 name=91i386
 arch=i386
-version=9.1-RELEASE
+version=9.2-RELEASE
 
-[91amd64]
+[92amd64]
 name=91amd64
 arch=amd64
-version=9.1-RELEASE
+version=9.2-RELEASE
+
+[10i386]
+name=10i386
+arch=i386
+version=10.0-RELEASE
 
 [10amd64]
-name=10-amd64
+name=10amd64
 arch=amd64
 version=10.0-RELEASE
 """ % LOCALBASE
@@ -55,7 +60,7 @@ class Prunner(object):
         loadDisk()
         self._jails = loadJails()
         self._port_trees = []
-        self.is_setup = True
+        self.is_setup = False
         if not self.is_setup:
             self.setUp()
 
