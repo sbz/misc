@@ -124,7 +124,7 @@ class Prunner(object):
         if debug:
             print("teardown()...")
         if not self.is_setup:
-            self.teardown()
+            self.tearDown()
 
 def run(command, use_sudo=False):
     cpuset_cmd = cfg.get('default', 'cpuset_cmd')
