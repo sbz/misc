@@ -30,7 +30,7 @@ arch=i386
 version=8.4-RELEASE
 
 [84amd64]
-name=83amd64
+name=84amd64
 arch=amd64
 version=8.4-RELEASE
 
