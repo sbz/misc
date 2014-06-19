@@ -35,7 +35,7 @@ arch=amd64
 version=8.4-RELEASE
 
 [92i386]
-name=91i386
+name=92i386
 arch=i386
 version=9.2-RELEASE
 
