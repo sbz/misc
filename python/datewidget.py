@@ -4,14 +4,26 @@ import os
 import sys
 import subprocess
 
-DAYO_CMD = "/Users/sbz/Downloads/Day-O/Day-O.app/Contents/MacOS/Day-O"
+DAYO_CMD = "/Applications/Day-O/Day-O.app/Contents/MacOS/Day-O"
 
 
 class TimeZone(object):
+    """
+    This class allow to launch Day-O app with the given timezone.
 
+    'tz_string' is a string corresponding to the correct zonename info
+    according database located into /usr/share/zoneinfo.
+
+    All available values can be listed using shell command below
+        % find /usr/share/zoneinfo -type f
+
+    See also tzfile(5), zdump(8).
+    """
     def __init__(self):
-        # tz_string according to find /usr/share/zoneinfo -type f
         self.tz_string = os.environ.get("TZ", "Europe/Paris")
+
+    def _set_zone(self):
+        os.environ["TZ"] = self.tz_string
 
     def set_bdt(self):
         """
@@ -40,9 +52,6 @@ class TimeZone(object):
         """
         self.tz_string = "Europe/Dublin"
         self._set_zone()
-
-    def _set_zone(self):
-        os.environ["TZ"] = self.tz_string
 
 
 def main():
