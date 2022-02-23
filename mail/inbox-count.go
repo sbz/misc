@@ -51,6 +51,11 @@ func getPassword() string {
 func main() {
 	var userName string
 	var userPassword string
+	var imapFolder string = imap.InboxName
+
+	if len(os.Args) != 1 {
+		imapFolder = os.Args[1]
+	}
 
 	userName = os.Getenv("GMAIL_ACCOUNT")
 	if userName == "" {
@@ -73,7 +78,7 @@ func main() {
 	defer c.Logout()
 
 	var readOnly = true
-	mboxStatus, err := c.Select(imap.InboxName, readOnly)
+	mboxStatus, err := c.Select(imapFolder, readOnly)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,7 +90,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%d/%d\n", len(unreadIds), mboxStatus.Messages)
+	fmt.Printf("%d/%d (%s)\n", len(unreadIds), mboxStatus.Messages, imapFolder)
 
 	os.Exit(0)
 }
