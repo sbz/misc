@@ -4,6 +4,7 @@ package main
 Invoke commands:
 	Run with config from environment variables:
 		GMAIL_ACCOUNT=<redact> GMAIL_PASSWORD=<redact> GO111MODULE=off go run inbox-count.go
+		GMAIL_ACCOUNT=$(pass show self/gmail/username) GMAIL_PASSWORD=$(pass show self/gmail/password) GO111MODULE=off go run inbox-count.go
 	Run with config from mutt:
 		GO111MODULE=off go run inbox-count.go
 */
@@ -69,6 +70,10 @@ func main() {
 	c, err := client.DialTLS("imap.gmail.com:993", nil)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if ok := os.Getenv("DEBUG"); len(ok) != 0 {
+		c.SetDebug(os.Stdout)
 	}
 
 	err = c.Login(userName, userPassword)
